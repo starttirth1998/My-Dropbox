@@ -47,7 +47,7 @@ while True:
                 try:
                     start_time = time.mktime(time.strptime(' '.join(split_data[2:6]), '%d %m %Y %H:%M:%S'))
                     end_time = time.mktime(time.strptime(' '.join(split_data[6:10]), '%d %m %Y %H:%M:%S'))
-                    #print file_list
+                    #print start_time
                     for f in file_list:
                         #print f
                         stat = os.stat(f)
