@@ -2,7 +2,7 @@ import socket
 import hashlib
 
 host = socket.gethostname()
-port = 9994
+port = 9990
 
 def send_msg(msg,regular):
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
