@@ -3,11 +3,12 @@ import hashlib
 import os
 import time
 import mimetypes
+import re
 
 serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 host = socket.gethostname()
-port = 9998
+port = 9994
 serversocket.bind((host,port))
 serversocket.listen(5)
 
@@ -36,7 +37,7 @@ while True:
                         file_type = "Unknown"
                     info+='\t'.join([f,size,mod_time,str(file_type[0])])+'\n'
                     #print info
-                clientsocket.send("PASS " + str(len(info)))
+                clientsocket.send("LEN " + str(len(info)))
                 clientsocket.recv(1)
                 while len(info):
                     sent = clientsocket.send(info)
@@ -59,16 +60,44 @@ while True:
                         if start_time < os.path.getmtime(f) < end_time:
                             info+='\t'.join([f,size,mod_time,str(file_type[0])])+'\n'
                         #print info
-                    clientsocket.send("PASS " + str(len(info)))
+                    clientsocket.send("LEN " + str(len(info)))
                     clientsocket.recv(1)
                     while len(info):
                         sent = clientsocket.send(info)
                         info = info[sent:]
                 except:
-                    #clientsocket.send("PASS " + str(0))
+                    #clientsocket.send("LEN " + str(0))
                     #clientscoket.recv(1)
                     print "Invalid command"
-                    clientsocket.send('Fail')
+                    clientsocket.send("Fail")
+            elif split_data[1] == "regex":
+                #print "in"
+                info = ""
+                file_list = [f for f in os.listdir('.') if os.path.isfile(f)]
+                #print file_list
+                try:
+                    reg = re.compile(' '.join(split_data[2:]).strip())
+                    print reg
+                    for f in file_list:
+                        #print f
+                        stat = os.stat(f)
+                        mod_time = time.ctime(stat.st_mtime)
+                        size = str(stat.st_size)
+                        file_type = mimetypes.guess_type(f,False)
+                        if not file_type:
+                            file_type = "Unknown"
+                        print reg.search(f)
+                        if reg.search(f):
+                            info+='\t'.join([f,size,mod_time,str(file_type[0])])+'\n'
+                        #print info
+                    clientsocket.send("LEN " + str(len(info)))
+                    clientsocket.recv(1)
+                    while len(info):
+                        sent = clientsocket.send(info)
+                        info = info[sent:]
+                except:
+                    print "Invalid command"
+                    clientsocket.send("Fail")
             clientsocket.close()
     except:
         print "Error Server"
