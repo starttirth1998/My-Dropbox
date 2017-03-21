@@ -1,6 +1,18 @@
 import socket
 import hashlib
 import signal
+import threading
+
+class myThread (threading.Thread):
+    def __init__(self, threadID, name):
+        threading.Thread.__init__(self)
+        self.threadID = threadID
+        self.name = name
+        #self.counter = counter
+    def run(self):
+        print "Starting " + self.name + "\n"
+        client2()
+        print "Exiting " + self.name + "\n"
 
 class AlarmException(Exception):
     pass
@@ -9,9 +21,8 @@ def alarmHandler(signum, frame):
     raise AlarmException
 
 host = socket.gethostname()
-port = 9998
+port_1 = 9998
 timeout = 5
-flag_command = 1
 hash_check = ""
 hash_check_split = []
 hash_dict = {}
@@ -27,7 +38,7 @@ def md5(filename):
 
 def send_msg(msg,regular):
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    client.connect((host,port))
+    client.connect((host,port_1))
     info = ""
     print "Connected"
     client.send(msg)
@@ -80,51 +91,62 @@ def send_msg(msg,regular):
         print "Connection Closed"
         return "Finished"
 
-while True:
-    print "prompt>",
-    command = raw_input()
-    split_command = command.split()
-    try:
-        while split_command[0] != "exit":
-            flag = True
-            if split_command[0] == "download":
-                flag = False
+def client2():
+    flag_command = 1
+    while True:
+        print "prompt>",
+        command = raw_input()
+        split_command = command.split()
+        try:
+            while split_command[0] != "exit":
+                flag = True
+                if split_command[0] == "download":
+                    flag = False
 
-            if flag_command == 1:
-                output = send_msg(command,flag)
-                if output != None:
-                    print output
+                if flag_command == 1:
+                    #print command
+                    output = send_msg(command,flag)
+                    if output != None:
+                        print output
 
-            hash_check = send_msg("hash checkall",True)
-            #print hash_check
-            hash_check_split = hash_check.split()
+                hash_check = send_msg("hash checkall",True)
+                #print hash_check
+                hash_check_split = hash_check.split()
 
-            for k in range(0,len(hash_check_split),7):
-                #print hash_check_split[k]
-                #print hash_dict
-                if hash_check_split[k] not in hash_dict.keys():
-                    hash_dict[hash_check_split[k]] = hash_check_split[k+1]
-                    print hash_check_split[k]
-                    temp = send_msg("download TCP "+hash_check_split[k],False)
-                    print "File added"
-                if hash_dict[hash_check_split[k]] != hash_check_split[k+1]:
-                    temp = send_msg("download TCP "+hash_check_split[k],False)
-                    hash_dict[hash_check_split[k]] = hash_check_split[k+1]
-                    print "File Updated"
+                for k in range(0,len(hash_check_split),7):
+                    #print hash_check_split[k]
+                    #print hash_dict
+                    if hash_check_split[k] not in hash_dict.keys():
+                        hash_dict[hash_check_split[k]] = hash_check_split[k+1]
+                        print hash_check_split[k]
+                        temp = send_msg("download TCP "+hash_check_split[k],False)
+                        print "File added"
+                    if hash_dict[hash_check_split[k]] != hash_check_split[k+1]:
+                        temp = send_msg("download TCP "+hash_check_split[k],False)
+                        hash_dict[hash_check_split[k]] = hash_check_split[k+1]
+                        print "File Updated"
 
-            signal.signal(signal.SIGALRM, alarmHandler)
-            signal.alarm(timeout)
-            try:
-                print "prompt>",
-                command = raw_input()
-                split_command = command.split()
-                signal.alarm(0)
-                flag_command = 1
-            except AlarmException:
-                print "Outside Command 2"
-                flag_command = 0
-            signal.signal(signal.SIGALRM, signal.SIG_IGN)
-        break;
-    except:
-        print("Error Occured")
-        #break;
+
+                #signal.signal(signal.SIGALRM, alarmHandler)
+                #print "Check the problem"
+                #signal.alarm(timeout)
+                try:
+                    print "prompt>",
+                    command = raw_input()
+                    split_command = command.split()
+                    signal.alarm(0)
+                    flag_command = 1
+                except AlarmException:
+                    print "Outside Command 2"
+                    flag_command = 0
+                #signal.signal(signal.SIGALRM, signal.SIG_IGN)
+            #thread22.exit()
+            break;
+        except:
+            print("Error Occured")
+            #break;
+
+#client2()
+thread22 = myThread(22,"Thread - 22")
+thread22.start()
+print "Exiting Main Thread"
