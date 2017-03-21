@@ -58,13 +58,15 @@ def sync():
         #print hash_dict
         if hash_check_split[k] not in hash_dict.keys():
             hash_dict[hash_check_split[k]] = hash_check_split[k+1]
-            print hash_check_split[k]
+            #print hash_check_split[k]
             temp = send_msg("download TCP "+hash_check_split[k],False)
             print "File added"
+            #print "prompt>",
         if hash_dict[hash_check_split[k]] != hash_check_split[k+1]:
             temp = send_msg("download TCP "+hash_check_split[k],False)
             hash_dict[hash_check_split[k]] = hash_check_split[k+1]
             print "File Updated"
+            #print "prompt>",
 
 def md5(filename):
     hasher = hashlib.md5()
@@ -79,7 +81,7 @@ def send_msg(msg,regular):
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     client.connect((host,port_1))
     info = ""
-    print "Connected"
+    #print "Connected"
     client.send(msg)
     split_msg = msg.split()
     if regular:
@@ -103,7 +105,7 @@ def send_msg(msg,regular):
             info_bit = client.recv(1024).split()
             client.send("done")
 
-            print "File Name:", info_bit[0]
+            print "\nFile Name:", info_bit[0]
             print "Size:",info_bit[1]
             print "Modified Time:",info_bit[2:7]
             print "MD5 hash:",info_bit[7]
@@ -283,7 +285,7 @@ def server2():
                         #clientsocket.send("LEN " + str(0))
                         #clientscoket.recv(1)
                         print "Invalid command"
-                        clientsocket.send("Fail")
+                        clientsocket.send("Fail shortlist")
                 elif split_data[1] == "regex":
                     #print "in"
                     #print file_list
@@ -298,7 +300,7 @@ def server2():
                             file_type = mimetypes.guess_type(f,False)
                             if not file_type:
                                 file_type = "Unknown"
-                            print reg.search(f)
+                            #print reg.search(f)
                             if reg.search(f):
                                 info+='\t'.join([f,size,mod_time,str(file_type[0])])+'\n'
                             #print info
@@ -309,7 +311,7 @@ def server2():
                             info = info[sent:]
                     except:
                         print "Invalid command"
-                        clientsocket.send("Fail")
+                        clientsocket.send("Fail regex")
             if split_data[0] == "hash":
                 info = ""
                 file_list = [f for f in os.listdir('.') if os.path.isfile(f)]
@@ -327,7 +329,7 @@ def server2():
                         clientsocket.send(info)
                     except:
                         print "Invalid " + file_name
-                        clientsocket.send("Fail")
+                        clientsocket.send("Fail verify")
                 elif split_data[1] == "checkall":
                     for f in file_list:
                         hash_val = md5(f)
@@ -341,7 +343,7 @@ def server2():
                         info = info[sent:]
                 else:
                     print "Invalid command"
-                    clientsocket.send("Fail")
+                    clientsocket.send("Fail checkall")
             if split_data[0] == "download":
                 info = ""
                 file_name = ' '.join(split_data[2:]).strip()
@@ -372,7 +374,7 @@ def server2():
                         #clientsocket.close()
                     except:
                         print "Invalid command"
-                        clientsocket.send("Fail")
+                        clientsocket.send("Fail TCP")
                     #clientsocket.send(str(len(info)))
                 elif split_data[1] == "UDP":
                     try:
@@ -397,7 +399,7 @@ def server2():
                         #print info
                         data, (taddr, destinport) = transfer_sock.recvfrom(1024)
 
-                        print data,taddr
+                        #print data,taddr
                         with open(file_name,"rb") as f:
                             buf = f.read(1024)
                             while len(buf) > 0:
@@ -409,7 +411,7 @@ def server2():
                     except Exception as e:
                         print e
                         print "Invalid command"
-                        clientsocket.send("Fail")
+                        clientsocket.send("Fail UDP")
                     #clientsocket.send(str(len(info)))
 
             clientsocket.close()
@@ -431,7 +433,7 @@ thread22.start()
 #while True:
 #    try:
 #        sync()
-#        time.sleep(5)
+#        time.sleep(10)
 #    except:
 #        pass
 #print "Exiting Main Thread"
