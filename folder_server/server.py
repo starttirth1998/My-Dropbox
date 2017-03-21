@@ -7,6 +7,8 @@ import re
 import signal
 import threading
 
+ans = 0
+
 serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 host = socket.gethostname()
@@ -187,6 +189,7 @@ def client1():
         command = raw_input()
         split_command = command.split()
         try:
+            #split_command[0] == "index"
             while split_command[0] != "exit":
                 flag = True
                 if split_command[0] == "download":
@@ -197,25 +200,29 @@ def client1():
                     output = send_msg(command,flag)
                     if output != None:
                         print output
-
-                sync()
+                if ans == 0:
+                    sync()
+                    time.sleep(10)
 
                 #signal.signal(signal.SIGALRM, alarmHandler)
                 #print "Check the problem"
                 #signal.alarm(timeout)
-                try:
-                    print "prompt>",
-                    command = raw_input()
-                    split_command = command.split()
-                    signal.alarm(0)
-                    flag_command = 1
-                except AlarmException:
-                    print "Outside Command 2"
-                    flag_command = 0
+                if ans:
+                    try:
+                        print "prompt>",
+                        command = raw_input()
+                        split_command = command.split()
+                        signal.alarm(0)
+                        flag_command = 1
+                    except AlarmException:
+                        print "Outside Command 2"
+                        flag_command = 0
+
                 #signal.signal(signal.SIGALRM, signal.SIG_IGN)
             #thread22.exit()
             break;
-        except:
+        except Exception as e:
+            print e
             print("Error Occured")
             #break;
 

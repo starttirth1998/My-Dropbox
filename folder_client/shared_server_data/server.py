@@ -187,6 +187,7 @@ def client1():
         command = raw_input()
         split_command = command.split()
         try:
+            split_command[0] == "index"
             while split_command[0] != "exit":
                 flag = True
                 if split_command[0] == "download":
@@ -199,10 +200,12 @@ def client1():
                         print output
 
                 sync()
+                time.sleep(10)
 
                 #signal.signal(signal.SIGALRM, alarmHandler)
                 #print "Check the problem"
                 #signal.alarm(timeout)
+                '''
                 try:
                     print "prompt>",
                     command = raw_input()
@@ -212,10 +215,12 @@ def client1():
                 except AlarmException:
                     print "Outside Command 2"
                     flag_command = 0
+                '''
                 #signal.signal(signal.SIGALRM, signal.SIG_IGN)
             #thread22.exit()
             break;
-        except:
+        except Exception as e:
+            print e
             print("Error Occured")
             #break;
 
