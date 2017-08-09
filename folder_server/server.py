@@ -7,7 +7,7 @@ import re
 import signal
 import threading
 
-ans = 0
+ans = 1
 
 serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
@@ -106,6 +106,9 @@ def send_msg(msg,regular):
             print "Modified Time:",info_bit[2:7]
             print "MD5 hash:",info_bit[7]
 
+            file_perm = int(info_bit[8])
+            #print file_perm
+
             os.chdir("./shared_client_data")
             with open(info_bit[0],"wb") as f:
                 print "Start"
@@ -121,6 +124,7 @@ def send_msg(msg,regular):
 
             #print "File Closed",md5(info_bit[0])
             if md5(info_bit[0]) == info_bit[7]:
+                os.chmod(info_bit[0],file_perm)
                 print "Successfully downloaded"
             else:
                 print "Downloading failed"
@@ -134,49 +138,54 @@ def send_msg(msg,regular):
         elif split_msg[1] == "UDP":
             UDP_flag = 1
             try:
-                while UDP_flag:
-                    file_socket = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
+                file_socket = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
 
-                    transfer_port = client.recv(1024).split()
-                    client.send("b")
+                transfer_port = client.recv(1024).split()
+                client.send("b")
 
-                    info_bit = client.recv(1024).split()
-                    #client.send("done")
+                info_bit = client.recv(1024).split()
+                #client.send("done")
 
-                    print "File Name:", info_bit[0]
-                    print "Size:",info_bit[1]
-                    print "Modified Time:",info_bit[2:7]
-                    print "MD5 hash:",info_bit[7]
+                print "\nFile Name:", info_bit[0]
+                print "Size:",info_bit[1]
+                print "Modified Time:",info_bit[2:7]
+                print "MD5 hash:",info_bit[7]
 
-                    os.chdir("./shared_client_data")
-                    read_size = int(info_bit[1])
-                    size_read = 0
+                file_perm = int(info_bit[8])
 
-                    print int(transfer_port[1])
-                    file_socket.sendto("b",(host,int(transfer_port[1])))
-                    with open(info_bit[0],"wb") as f:
-                        print "Start"
-                        while True:
-                            print "Receiving"
-                            info, udpaddr = file_socket.recvfrom(1024)
-                            size_read += len(info)
-                            #print info
-                            f.write(info)
-                            if not info or (size_read >= read_size):
-                                break
+                os.chdir("./shared_client_data")
+                read_size = int(info_bit[1])
+                size_read = 0
+
+                #print int(transfer_port[1])
+                file_socket.sendto("b",(host,int(transfer_port[1])))
+                with open(info_bit[0],"wb") as f:
+                    print "Start"
+                    while True:
+                        #print "Receiving"
+                        info, udpaddr = file_socket.recvfrom(1024)
+                        size_read += len(info)
+                        #print info
+                        f.write(info)
+                        if not info or (size_read >= read_size):
+                            break
 
 
-                    f.close()
-                    if md5(info_bit[0]) == info_bit[7]:
-                        print "Successfully downloaded"
-                        UDP_flag = 0
-                    else:
-                        print "Downloading failed"
+                f.close()
+                if md5(info_bit[0]) == info_bit[7]:
+                    os.chmod(info_bit[0],file_perm)
+                    print "Successfully downloaded"
+                    UDP_flag = 0
+                else:
+                    print "Downloading failed"
 
-                    os.chdir("./..")
-                    file_socket.close()
+                os.chdir("./..")
+                file_socket.close()
                 client.close()
                 print "Connection Closed"
+                if UDP_flag:
+                    send_msg("download UDP " + file_name,False)
+
             except Exception as e:
                 print e
         else:
@@ -185,46 +194,52 @@ def send_msg(msg,regular):
 def client1():
     flag_command = 1
     while True:
-        print "prompt>",
-        command = raw_input()
-        split_command = command.split()
-        try:
-            #split_command[0] == "index"
-            while split_command[0] != "exit":
-                flag = True
-                if split_command[0] == "download":
-                    flag = False
+        if ans:
+            print "prompt>",
+            command = raw_input()
+            split_command = command.split()
+            try:
+                #split_command[0] == "index"
+                while split_command[0] != "exit":
+                    flag = True
+                    if split_command[0] == "download":
+                        flag = False
 
-                if flag_command == 1:
-                    #print command
-                    output = send_msg(command,flag)
-                    if output != None:
-                        print output
-                if ans == 0:
-                    sync()
-                    time.sleep(10)
+                    if flag_command == 1:
+                        #print command
+                        output = send_msg(command,flag)
+                        if output != None:
+                            print output
 
-                #signal.signal(signal.SIGALRM, alarmHandler)
-                #print "Check the problem"
-                #signal.alarm(timeout)
-                if ans:
+                    #sync()
+
+                    #time.sleep(5)
+                    #signal.signal(signal.SIGALRM, alarmHandler)
+                    #print "Check the problem"
+                    #signal.alarm(timeout)
                     try:
                         print "prompt>",
                         command = raw_input()
                         split_command = command.split()
-                        signal.alarm(0)
+                        #signal.alarm(0)
                         flag_command = 1
                     except AlarmException:
                         print "Outside Command 2"
                         flag_command = 0
 
-                #signal.signal(signal.SIGALRM, signal.SIG_IGN)
-            #thread22.exit()
-            break;
-        except Exception as e:
-            print e
-            print("Error Occured")
-            #break;
+                    #signal.signal(signal.SIGALRM, signal.SIG_IGN)
+                #thread22.exit()
+                break;
+            except Exception as e:
+                print e
+                print("Error Occured")
+                #break;
+        elif ans == 0:
+            try:
+                sync()
+                time.sleep(5)
+            except:
+                time.sleep(5)
 
 def server1():
     while True:
@@ -350,15 +365,19 @@ def server1():
                 if split_data[1] == "TCP":
                     try:
                         if not os.path.isfile(file_name):
-                            print "File Not Found"
+                            print "\nFile Not Found"
                             raise(FileNotFoundError)
                         stat = os.stat(file_name)
                         mod_time = time.ctime(stat.st_mtime)
                         size = str(stat.st_size)
                         hash_val = md5(file_name)
+
+                        perm = str(os.lstat(file_name).st_mode)
+                        #print perm
+
                         f = open(file_name,'rb')
 
-                        info += file_name + ' ' + size + ' ' + mod_time + ' ' + hash_val
+                        info += file_name + ' ' + size + ' ' + mod_time + ' ' + hash_val + ' ' + perm
                         #print info
                         clientsocket.send(info)
                         clientsocket.recv(1024)
@@ -378,7 +397,7 @@ def server1():
                     try:
                         UDP_port = 19998
                         if not os.path.isfile(file_name):
-                            print "File Not Found"
+                            print "\nFile Not Found"
                             raise(FileNotFoundError)
                         stat = os.stat(file_name)
                         mod_time = time.ctime(stat.st_mtime)
@@ -392,7 +411,9 @@ def server1():
                         clientsocket.send(("LEN "+str(transfer_port)))
                         clientsocket.recv(1)
 
-                        info += file_name + ' ' + size + ' ' + mod_time + ' ' + hash_val
+                        perm = str(os.lstat(file_name).st_mode)
+                        info += file_name + ' ' + size + ' ' + mod_time + ' ' + hash_val + ' ' + perm
+
                         clientsocket.send(info)
                         #print info
                         data, (taddr, destinport) = transfer_sock.recvfrom(1024)
@@ -416,9 +437,9 @@ def server1():
             #serversocket.close()
         except:
             print "Error Server"
-            #clientsocket.close()
-            serversocket.close()
-            break;
+            clientsocket.close()
+            #serversocket.close()
+            #break;
 
 thread11 = myThread1(11,"Thread - 11")
 thread12 = myThread2(12,"Thread - 12")
@@ -429,7 +450,7 @@ thread12.start()
 #while True:
 #    try:
 #        sync()
-#        time.sleep(10)
+#        time.sleep(5)
 #    except:
 #        pass
 #print "Exiting Main Thread"
